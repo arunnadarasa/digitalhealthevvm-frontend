@@ -308,6 +308,137 @@ textarea:focus {
   margin: 0.25rem 0 0 !important;
 }
 
+/* Recent activity */
+.activity-intro {
+  margin-bottom: 1.25rem !important;
+}
+
+.activity-empty {
+  padding: 1.5rem;
+  text-align: center;
+  background: rgba(6, 182, 212, 0.06);
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+}
+
+.activity-empty p {
+  margin: 0 0 0.5rem !important;
+}
+
+.activity-list {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.activity-item {
+  background: rgba(10, 15, 20, 0.5);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  transition: border-color 0.2s ease;
+}
+
+.activity-item:hover {
+  border-color: rgba(6, 182, 212, 0.35);
+}
+
+.activity-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.35rem;
+}
+
+.activity-kind {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+
+.activity-kind-dhm_faucet {
+  background: rgba(6, 182, 212, 0.2);
+  color: var(--accent);
+}
+
+.activity-kind-dhm_x402 {
+  background: rgba(52, 211, 153, 0.15);
+  color: var(--success);
+}
+
+.activity-kind-usdc_x402 {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+}
+
+.activity-time {
+  font-size: 0.8rem;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+}
+
+.activity-title {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.activity-desc {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: 0.35rem;
+  line-height: 1.4;
+}
+
+.activity-actions {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.btn-open-tx {
+  font-size: 0.8rem;
+  padding: 0.4rem 0.85rem;
+}
+
+.btn-open-tx:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.activity-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0.75rem 0;
+}
+
+.activity-page-info {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text-muted);
+  border-color: var(--border);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: rgba(6, 182, 212, 0.1);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
 @media (max-width: 600px) {
   .grid-2 {
     grid-template-columns: 1fr;

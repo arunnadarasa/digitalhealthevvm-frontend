@@ -6,6 +6,7 @@ import { formatUnits, parseUnits, encodeFunctionData } from "viem";
 import { ADDRESSES, DHM_TOKEN, CHAIN_ID, EVVM_ID } from "../../config/contracts";
 import { evvmAbi } from "../../abis";
 import { buildEvvmPayMessageCoreDoc } from "../../lib/evvmSign";
+import { addActivity } from "../../lib/activityLog";
 
 const FAUCET_AMOUNT = parseUnits("1000", 18);
 const TOKEN_SYMBOL = "DHM";
@@ -55,7 +56,7 @@ export function EVVMSection() {
     setIsFaucetPending(true);
     setFaucetStatus("Requesting…");
     try {
-      await sendTransaction({
+      const txHash = await sendTransaction({
         to: ADDRESSES.evvm,
         data: encodeFunctionData({
           abi: evvmAbi,
@@ -65,6 +66,12 @@ export function EVVMSection() {
       });
       await refetchBalance();
       setFaucetStatus(`Done! You received 1000 ${TOKEN_SYMBOL}.`);
+      addActivity({
+        kind: "dhm_faucet",
+        title: "Received DHM from faucet",
+        description: `1000 ${TOKEN_SYMBOL} to ${address.slice(0, 6)}…${address.slice(-4)}`,
+        txHash: txHash as string,
+      });
     } catch (e) {
       setFaucetStatus(`Error: ${e instanceof Error ? e.message : "Unknown"}`);
     } finally {
