@@ -29,7 +29,7 @@ type PaymentRequiredBody = {
   options: PaymentOption[];
 };
 
-const PAYMENT_REQUIRED = "402";
+
 const DEMO_AMOUNT_READABLE = "0.1";
 
 export function X402TestSection() {
