@@ -1,43 +1,27 @@
-import { WagmiProvider } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { config } from "./config/wagmi";
-import { ErrorBoundary } from "./components/ErrorBoundary";
-import { Header } from "./components/Header";
-import { EVVMSection } from "./components/sections/EVVMSection";
-import { NameServiceSection } from "./components/sections/NameServiceSection";
-import { StakingSection } from "./components/sections/StakingSection";
-import "./App.css";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import Index from "./pages/Index.tsx";
+import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
 
-function App() {
-  return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <WagmiProvider config={config}>
-          <div className="app">
-            <Header />
-            <main className="main">
-              <p className="hackathon-intro">
-                This is a starter template for participants of the{" "}
-                <a href="https://clinicalhackathon.com/" target="_blank" rel="noopener noreferrer" className="wallet-link">
-                  OpenClaw Clinical Hackathon
-                </a>{" "}
-                to explore nanopayments using digital currencies between different OpenClaw Agents.
-              </p>
-              <p className="disclaimer">
-                This is an educational prototype and is not affiliated with or endorsed by any healthcare provider or
-                government body.
-              </p>
-              <EVVMSection />
-              <NameServiceSection />
-              <StakingSection />
-            </main>
-          </div>
-        </WagmiProvider>
-      </QueryClientProvider>
-    </ErrorBoundary>
-  );
-}
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
 
 export default App;
