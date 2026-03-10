@@ -29,7 +29,6 @@ type PaymentRequiredBody = {
   options: PaymentOption[];
 };
 
-
 const DEMO_AMOUNT_READABLE = "0.1";
 
 export function X402TestSection() {
