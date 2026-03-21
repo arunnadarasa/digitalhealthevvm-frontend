@@ -1,14 +1,27 @@
 import { useState, useEffect } from "react";
 import { useAccount, useBalance, useChainId, useSwitchChain, useConnect, useDisconnect } from "wagmi";
 import { injected } from "wagmi/connectors";
-import { formatEther } from "viem";
-import { CHAIN_ID } from "../config/contracts";
+import { formatUnits } from "viem";
+import { baseSepolia, tempoModerato } from "viem/chains";
+import { CHAIN_ID, NETWORK_DISPLAY_NAME } from "../config/contracts";
+import { TEMPO_MODERATO_FEE_TOKENS, TEMPO_MODERATO_FEE_DECIMALS } from "../config/tempoStablecoins";
 
-const CHAIN_CONFIG: Record<number, { name: string; explorer: string; faucet: string }> = {
-  [CHAIN_ID]: {
+type ChainUi = { name: string; explorer: string; faucet: string; nativeDecimals: number; nativeLabel: string };
+
+const CHAIN_CONFIG: Record<number, ChainUi> = {
+  [baseSepolia.id]: {
     name: "Base Sepolia",
     explorer: "https://sepolia.basescan.org",
     faucet: "https://www.coinbase.com/faucets/base-ethereum-goerli-faucet",
+    nativeDecimals: 18,
+    nativeLabel: "ETH",
+  },
+  [tempoModerato.id]: {
+    name: "Tempo Moderato",
+    explorer: "https://explore.moderato.tempo.xyz",
+    faucet: "https://docs.tempo.xyz",
+    nativeDecimals: 6,
+    nativeLabel: "USD",
   },
 };
 
@@ -45,6 +58,11 @@ export function Header() {
     }
   };
 
+  const nativeDisplay =
+    ethBalance?.value !== undefined && chainConfig
+      ? `${parseFloat(formatUnits(ethBalance.value, chainConfig.nativeDecimals)).toFixed(4)} ${chainConfig.nativeLabel}`
+      : `— ${chainConfig?.nativeLabel ?? "—"}`;
+
   return (
     <header className="header">
       <div className="header-inner">
@@ -58,7 +76,7 @@ export function Header() {
                   className="btn btn-chain"
                   onClick={handleSwitchChain}
                   disabled={isSwitching}
-                  title="Switch to Base Sepolia"
+                  title={`Switch to ${NETWORK_DISPLAY_NAME}`}
                 >
                   {isSwitching ? "…" : "Switch Chain"}
                 </button>
@@ -69,19 +87,32 @@ export function Header() {
                 </span>
               )}
               <div className="wallet-balance-row">
-                <span className="eth-balance" title="Base Sepolia ETH">
-                  {ethBalance?.value !== undefined ? `${parseFloat(formatEther(ethBalance.value)).toFixed(4)} ETH` : "— ETH"}
+                <span
+                  className="eth-balance"
+                  title={
+                    chainId === tempoModerato.id
+                      ? `Wallet-reported balance for the active fee token (${TEMPO_MODERATO_FEE_DECIMALS} decimals)`
+                      : `Native balance on ${chainConfig.name}`
+                  }
+                >
+                  {nativeDisplay}
                 </span>
-                <a href={chainConfig.faucet} target="_blank" rel="noopener noreferrer" className="faucet-link" title="Get Base Sepolia ETH">
+                <a href={chainConfig.faucet} target="_blank" rel="noopener noreferrer" className="faucet-link" title="Faucet / docs">
                   Faucet
                 </a>
               </div>
+              {chainId === tempoModerato.id && (
+                <p className="tempo-fee-tokens-hint" title="Tempo Moderato testnet fee stablecoins">
+                  Fees: {TEMPO_MODERATO_FEE_TOKENS.map((t) => t.symbol).join(" · ")} · {TEMPO_MODERATO_FEE_DECIMALS}{" "}
+                  decimals
+                </p>
+              )}
               <a
                 href={`${chainConfig.explorer}/address/${address}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="wallet-addr wallet-link"
-                title="View on Basescan"
+                title="View on explorer"
               >
                 {address.slice(0, 6)}…{address.slice(-4)}
               </a>

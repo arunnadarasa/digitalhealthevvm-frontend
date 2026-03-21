@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAccount, useSignMessage } from "wagmi";
-import { X402_SERVER_URL } from "../../config/contracts";
+import { MPP_SERVER_URL, TARGET_NETWORK } from "../../config/contracts";
 import { buildEvvmPayMessageCoreDoc } from "../../lib/evvmSign";
 import type { Hex } from "viem";
 import { addActivity } from "../../lib/activityLog";
@@ -31,7 +31,8 @@ type PaymentRequiredBody = {
 
 const DEMO_AMOUNT_READABLE = "0.1";
 
-export function X402TestSection() {
+/** EVVM DHM paywall demo (HTTP 402 + EVVM signature). Aligned with Tempo MPP / pay-for-HTTP patterns (DanceTempo reference: `mppx`, OpenAPI discovery). */
+export function MppDhmTestSection() {
   const { address, chainId } = useAccount();
   const { signMessageAsync } = useSignMessage();
 
@@ -51,7 +52,7 @@ export function X402TestSection() {
     setFetchStatus("Fetching…");
     setIsFetching(true);
     try {
-      const res = await fetch(`${X402_SERVER_URL}/clinical/mri-slot`);
+      const res = await fetch(`${MPP_SERVER_URL}/clinical/mri-slot`);
       const paymentRequired = res.headers.get("PAYMENT-REQUIRED") === "1" || res.status === 402;
 
       if (paymentRequired && res.status === 402) {
@@ -59,7 +60,7 @@ export function X402TestSection() {
         const opt = body.options?.find((o) => o.type === "evvm_pay" || o.id === "dhm-evvm") ?? body.options?.[0];
         if (opt) {
           setPaymentOption(opt as PaymentOption);
-          setFetchStatus(`402 Payment Required — pay ${DEMO_AMOUNT_READABLE} DHM to unlock.`);
+          setFetchStatus(`402 Payment Required — pay ${DEMO_AMOUNT_READABLE} DHM to unlock (MPP-style resource).`);
         } else {
           setFetchStatus("402 but no DHM option in response.");
         }
@@ -68,11 +69,11 @@ export function X402TestSection() {
         setUnlockedContent(data.content ?? null);
         setFetchStatus("Resource already unlocked.");
       } else {
-        setFetchStatus(`Request failed: ${res.status} ${res.statusText}. Is the x402 server running at ${X402_SERVER_URL}?`);
+        setFetchStatus(`Request failed: ${res.status} ${res.statusText}. Is the MPP backend running at ${MPP_SERVER_URL}?`);
       }
     } catch (e) {
       setFetchStatus(
-        `Error: ${e instanceof Error ? e.message : String(e)}. Is the server running at ${X402_SERVER_URL}?`
+        `Error: ${e instanceof Error ? e.message : String(e)}. Is the server running at ${MPP_SERVER_URL}?`
       );
     } finally {
       setIsFetching(false);
@@ -118,7 +119,7 @@ export function X402TestSection() {
       if (!signature) throw new Error("No signature returned");
 
       setPayStatus("Submitting payment to server…");
-      const res = await fetch(`${X402_SERVER_URL}/payments/evvm/dhm`, {
+      const res = await fetch(`${MPP_SERVER_URL}/payments/evvm/dhm`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -144,8 +145,8 @@ export function X402TestSection() {
       setPayStatus(`Paid. Tx: ${data.txHash ?? "—"}`);
       setPaymentOption(null);
       addActivity({
-        kind: "dhm_x402",
-        title: "DHM x402 payment",
+        kind: "dhm_mpp",
+        title: "DHM MPP payment",
         description: `Paid ${DEMO_AMOUNT_READABLE} DHM to unlock MRI slot`,
         txHash: (data.txHash as string | undefined) ?? undefined,
       });
@@ -159,23 +160,36 @@ export function X402TestSection() {
     }
   };
 
+  if (TARGET_NETWORK !== "base-sepolia") {
+    return (
+      <section className="section">
+        <h2>MPP (DHM / EVVM)</h2>
+        <p>
+          This DHM paywall demo targets Base Sepolia. Set <code>VITE_TARGET_NETWORK=base-sepolia</code> in <code>.env</code>{" "}
+          and rebuild. For live Tempo MPP + <code>mppx</code>, use the DanceTempo reference app (same repo as your Tempo
+          checkout).
+        </p>
+      </section>
+    );
+  }
+
   return (
     <section className="section">
-      <h2>Test x402 server (DHM)</h2>
+      <h2>MPP — EVVM DHM paywall</h2>
       <p>
-        Request a protected resource from the local x402 server. You will get a 402 response; then pay with DHM
-        (async nonce + executor) to unlock the content.
+        Request a protected resource from your local backend. The server returns HTTP 402; you pay with DHM via EVVM{" "}
+        <code>pay()</code> (async nonce + executor). Same pay-for-HTTP idea as{" "}
+        <a href="https://mpp.dev" target="_blank" rel="noopener noreferrer">
+          MPP
+        </a>{" "}
+        on Tempo — this stack uses EVVM signatures instead of <code>mppx</code> wallet bundles.
       </p>
       <p className="address" style={{ marginBottom: "0.5rem" }}>
-        Server: <code>{X402_SERVER_URL}</code>
+        Backend: <code>{MPP_SERVER_URL}</code> (<code>VITE_MPP_SERVER_URL</code>)
       </p>
 
       <div className="form-actions">
-        <button
-          className="btn btn-primary"
-          onClick={handleFetchProtected}
-          disabled={isFetching}
-        >
+        <button className="btn btn-primary" onClick={handleFetchProtected} disabled={isFetching}>
           {isFetching ? "Fetching…" : "Fetch protected resource (MRI slot)"}
         </button>
       </div>
@@ -187,11 +201,7 @@ export function X402TestSection() {
           <p>
             {DEMO_AMOUNT_READABLE} DHM → {paymentOption.to?.slice(0, 6)}…{paymentOption.to?.slice(-4)}
           </p>
-          <button
-            className="btn btn-primary"
-            onClick={handlePayWithDHM}
-            disabled={isPaying || chainId !== CHAIN_ID}
-          >
+          <button className="btn btn-primary" onClick={handlePayWithDHM} disabled={isPaying || chainId !== CHAIN_ID}>
             {chainId !== CHAIN_ID
               ? "Switch to Base Sepolia"
               : isPaying

@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { getActivities, ActivityEntry } from "../../lib/activityLog";
+import { TX_EXPLORER_BASE } from "../../config/contracts";
 
 const PAGE_SIZE = 5;
-const BASE_SEPOLIA_EXPLORER = "https://sepolia.basescan.org";
 
 function formatDate(ts: number): string {
   try {
@@ -27,14 +27,14 @@ function formatDate(ts: number): string {
 }
 
 function formatKind(kind: ActivityEntry["kind"]): string {
-  if (kind === "dhm_faucet") return "DHM faucet";
-  if (kind === "dhm_x402") return "DHM x402";
-  if (kind === "usdc_x402") return "USDC x402";
+  if (kind === "dhm_faucet") return "EVVM faucet";
+  if (kind === "dhm_mpp" || kind === "dhm_x402") return "DHM MPP";
+  if (kind === "usdc_mpp" || kind === "usdc_x402") return "USDC MPP";
   return kind;
 }
 
 function openTransaction(txHash: string) {
-  window.open(`${BASE_SEPOLIA_EXPLORER}/tx/${txHash}`, "_blank", "noopener,noreferrer");
+  window.open(`${TX_EXPLORER_BASE}/tx/${txHash}`, "_blank", "noopener,noreferrer");
 }
 
 export function RecentTransactionsSection() {
@@ -53,13 +53,15 @@ export function RecentTransactionsSection() {
     <section className="section">
       <h2>Recent activity</h2>
       <p className="activity-intro">
-        Recent DHM faucet requests, DHM x402 payments, and USDC x402 payments. Stored locally in your browser — not
+        Recent EVVM faucet requests and MPP payment attempts (DHM / USDC demos). Stored locally in your browser — not
         from the blockchain.
       </p>
       {current.length === 0 ? (
         <div className="activity-empty">
           <p>No activity yet.</p>
-          <p className="small">Use the DHM faucet, pay with DHM on the x402 server, or pay with USDC via Echo to see entries here.</p>
+          <p className="small">
+            Use the EVVM faucet, complete an MPP DHM paywall payment, or an Echo USDC flow to see entries here.
+          </p>
         </div>
       ) : (
         <>
@@ -78,7 +80,7 @@ export function RecentTransactionsSection() {
                       type="button"
                       className="btn btn-open-tx"
                       onClick={() => openTransaction(a.txHash!)}
-                      title="Open transaction on Basescan"
+                      title="Open transaction on explorer"
                     >
                       View transaction
                     </button>

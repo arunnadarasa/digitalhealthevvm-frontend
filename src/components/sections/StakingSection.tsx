@@ -3,7 +3,7 @@ import { useAccount, useReadContract } from "wagmi";
 import { useEvmSendTransaction } from "../../hooks/useEvmSendTransaction";
 import { useSignMessage } from "wagmi";
 import { formatUnits, encodeFunctionData } from "viem";
-import { ADDRESSES, CHAIN_ID, DHM_TOKEN, EVVM_ID } from "../../config/contracts";
+import { ADDRESSES, CHAIN_ID, DHM_TOKEN, EVVM_ID, TOKEN_SYMBOL } from "../../config/contracts";
 import { stakingAbi, evvmAbi } from "../../abis";
 import {
   buildEvvmStakingMessageV3,
@@ -11,7 +11,6 @@ import {
   hashDataForPublicStake,
 } from "../../lib/evvmSign";
 
-const TOKEN_SYMBOL = "DHM";
 const zeroAddress = "0x0000000000000000000000000000000000000000" as `0x${string}`;
 
 export function StakingSection() {

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAccount, useSignTypedData } from "wagmi";
-import { USDC_BASE_SEPOLIA, X402_USDC_ECHO_URL } from "../../config/contracts";
+import { USDC_BASE_SEPOLIA, MPP_USDC_ECHO_URL, TARGET_NETWORK } from "../../config/contracts";
 import { addActivity } from "../../lib/activityLog";
 
 type PaymentRequirement = {
@@ -17,8 +17,9 @@ type PaymentRequirement = {
   };
 };
 
+/** Echo / PayAI-style envelope (may include legacy version fields in JSON). */
 type PaymentRequired = {
-  x402Version: number;
+  x402Version?: number;
   error: string;
   resource?: {
     url: string;
@@ -31,7 +32,8 @@ type PaymentRequired = {
 
 const CHAIN_ID = 84532; // Base Sepolia
 
-export function USDCX402TestSection() {
+/** USDC paywall via Echo (EIP-3009). Same HTTP 402 + payment pattern as MPPScan / Tempo MPP discovery. */
+export function MppUsdcTestSection() {
   const { address, chainId } = useAccount();
   const { signTypedDataAsync } = useSignTypedData();
 
@@ -49,9 +51,8 @@ export function USDCX402TestSection() {
     setPaymentResponse(null);
     setIsLoading(true);
     try {
-      const res = await fetch(X402_USDC_ECHO_URL);
+      const res = await fetch(MPP_USDC_ECHO_URL);
 
-      // Prefer PAYMENT-REQUIRED header (base64 JSON). Fall back to JSON body.
       const header = res.headers.get("PAYMENT-REQUIRED");
       let paymentRequired: PaymentRequired | null = null;
       if (header) {
@@ -61,7 +62,7 @@ export function USDCX402TestSection() {
       } else {
         const body = (await res.json()) as unknown;
         setEchoBody(JSON.stringify(body, null, 2));
-        if (typeof body === "object" && body && "accepts" in (body as any)) {
+        if (typeof body === "object" && body && "accepts" in (body as Record<string, unknown>)) {
           paymentRequired = body as PaymentRequired;
         }
       }
@@ -75,7 +76,7 @@ export function USDCX402TestSection() {
           ) ?? paymentRequired.accepts[0];
         if (req) {
           setRequirement(req);
-          setStatus("402 Payment Required from PayAI Echo – ready to sign USDC payment.");
+          setStatus("402 Payment Required from Echo — ready to sign USDC (MPP-compatible HTTP payment).");
         } else {
           setStatus("402 from Echo, but no USDC option found.");
         }
@@ -106,7 +107,7 @@ export function USDCX402TestSection() {
     }
 
     setIsSigning(true);
-    setStatus("Signing and sending USDC x402 payment to Echo…");
+    setStatus("Signing and sending USDC payment to Echo…");
     try {
       const nowSec = Math.floor(Date.now() / 1000);
       const validAfter = 0n;
@@ -175,7 +176,7 @@ export function USDCX402TestSection() {
 
       const paymentSignature = btoa(JSON.stringify(paymentPayload));
 
-      const res = await fetch(X402_USDC_ECHO_URL, {
+      const res = await fetch(MPP_USDC_ECHO_URL, {
         method: "GET",
         headers: {
           "PAYMENT-SIGNATURE": paymentSignature,
@@ -200,9 +201,7 @@ export function USDCX402TestSection() {
 
       if (!res.ok) {
         setStatus(
-          `Echo payment failed: ${res.status} ${
-            (body && (body as any).error) || res.statusText
-          }`,
+          `Echo payment failed: ${res.status} ${(body && (body as Record<string, unknown>).error) || res.statusText}`,
         );
         return;
       }
@@ -212,11 +211,11 @@ export function USDCX402TestSection() {
           ? (decodedPaymentResponse.transaction as string | undefined)
           : undefined;
 
-      setStatus("USDC x402 payment completed via Echo.");
+      setStatus("USDC payment completed via Echo (MPP-style HTTP flow).");
       addActivity({
-        kind: "usdc_x402",
-        title: "USDC x402 payment",
-        description: "Paid USDC via x402 to Echo merchant (refunded by Echo).",
+        kind: "usdc_mpp",
+        title: "USDC MPP payment",
+        description: "Paid USDC via Echo merchant flow (refunded by Echo in demo).",
         txHash,
       });
     } catch (e) {
@@ -231,15 +230,31 @@ export function USDCX402TestSection() {
     }
   };
 
+  if (TARGET_NETWORK !== "base-sepolia") {
+    return (
+      <section className="section">
+        <h2>MPP (USDC / Echo)</h2>
+        <p>
+          This Echo demo targets Base Sepolia. Set <code>VITE_TARGET_NETWORK=base-sepolia</code> in <code>.env</code> and
+          rebuild. For Tempo-native MPP + <code>mppx</code>, see the DanceTempo reference app in your Tempo project folder.
+        </p>
+      </section>
+    );
+  }
+
   return (
     <section className="section">
-      <h2>Test PayAI Echo (USDC on Base Sepolia)</h2>
+      <h2>MPP — PayAI Echo (USDC on Base Sepolia)</h2>
       <p>
-        This calls the PayAI x402 Echo endpoint for Base Sepolia. If the content is paywalled, the server should return
-        a 402 with USDC payment options and an EIP‑712 typed data payload to sign.
+        Calls the Echo paywalled endpoint. On 402, sign EIP-3009 <code>transferWithAuthorization</code> and resend with{" "}
+        <code>PAYMENT-SIGNATURE</code>. Same HTTP payment pattern as{" "}
+        <a href="https://www.mppscan.com/discovery" target="_blank" rel="noopener noreferrer">
+          MPPScan discovery
+        </a>{" "}
+        / Tempo MPP docs — here using USDC + Echo instead of <code>mppx</code> on Moderato.
       </p>
       <p className="address" style={{ marginBottom: "0.5rem" }}>
-        Echo endpoint: <code>{X402_USDC_ECHO_URL}</code>
+        Echo URL: <code>{MPP_USDC_ECHO_URL}</code> (<code>VITE_MPP_USDC_ECHO_URL</code>)
       </p>
       <div className="form-actions">
         <button className="btn btn-primary" onClick={fetchPaidContent} disabled={isLoading}>
@@ -265,13 +280,13 @@ export function USDCX402TestSection() {
 
       {requirement && (
         <div style={{ marginTop: "1rem" }}>
-          <h3>Step 2 – sign & send USDC payment</h3>
+          <h3>Step 2 — sign & send USDC</h3>
           <p>
-            This builds an EIP‑3009 <code>transferWithAuthorization</code> for USDC on Base Sepolia, signs it via
-            EIP‑712, and sends it back to Echo in a <code>PAYMENT-SIGNATURE</code> header.
+            EIP-3009 <code>transferWithAuthorization</code> for USDC on Base Sepolia, sent back in{" "}
+            <code>PAYMENT-SIGNATURE</code>.
           </p>
           <button className="btn btn-primary" onClick={handleSignUSDC} disabled={isSigning}>
-            {isSigning ? "Processing…" : "Pay with USDC via x402"}
+            {isSigning ? "Processing…" : "Pay with USDC (MPP flow)"}
           </button>
         </div>
       )}
@@ -283,8 +298,7 @@ export function USDCX402TestSection() {
             {JSON.stringify(paymentResponse, null, 2)}
           </pre>
           <p>
-            Echo automatically refunds tokens and covers gas, but this shows the full x402 USDC flow your Agents would
-            use for real merchants.
+            Echo may refund tokens in demo mode; this shows the full USDC HTTP payment path for agents and merchants.
           </p>
         </div>
       )}

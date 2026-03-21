@@ -1,4 +1,10 @@
-export type ActivityKind = "dhm_faucet" | "dhm_x402" | "usdc_x402";
+export type ActivityKind =
+  | "dhm_faucet"
+  | "dhm_mpp"
+  | "usdc_mpp"
+  /** @deprecated stored entries from older builds */
+  | "dhm_x402"
+  | "usdc_x402";
 
 export type ActivityEntry = {
   id: string;

@@ -2,7 +2,15 @@ import React, { useState, useEffect } from "react";
 import { useAccount, useReadContract, usePublicClient } from "wagmi";
 import { useEvmSendTransaction } from "../../hooks/useEvmSendTransaction";
 import { useSignMessage } from "wagmi";
-import { CHAIN_ID, ADDRESSES, DHM_TOKEN, EVVM_ID } from "../../config/contracts";
+import {
+  CHAIN_ID,
+  ADDRESSES,
+  DHM_TOKEN,
+  EVVM_ID,
+  TOKEN_SYMBOL,
+  NETWORK_DISPLAY_NAME,
+  TX_EXPLORER_BASE,
+} from "../../config/contracts";
 import { nameServiceAbi, evvmAbi } from "../../abis";
 import { formatUnits, encodeFunctionData } from "viem";
 import {
@@ -13,8 +21,6 @@ import {
 } from "../../lib/evvmSign";
 
 const PREREG_STORAGE_KEY = "digitalhealth-prereg";
-const TOKEN_SYMBOL = "DHM";
-
 interface PreregRecord {
   username: string;
   clowNumber: string;
@@ -275,12 +281,11 @@ export function NameServiceSection() {
       clearPrereg(address);
       setPrereg(null);
       setUsername("");
-      const explorer = "https://sepolia.basescan.org";
       setRegStatus(
         <>
           Username registered!{" "}
-          <a href={`${explorer}/tx/${txHash}`} target="_blank" rel="noopener noreferrer" className="wallet-link">
-            View transaction on Basescan
+          <a href={`${TX_EXPLORER_BASE}/tx/${txHash}`} target="_blank" rel="noopener noreferrer" className="wallet-link">
+            View transaction on explorer
           </a>
         </>
       );
@@ -304,7 +309,7 @@ export function NameServiceSection() {
       <h2>Name Service</h2>
       <p>
         Register a username on Digital Health EVVM. Pre-register (commit), wait 30 minutes, then complete registration
-        (reveal). Cost is paid in DHM.
+        (reveal). Cost is paid in {TOKEN_SYMBOL}.
       </p>
       <div className="form-row">
         <label>Username</label>
@@ -337,7 +342,7 @@ export function NameServiceSection() {
       {address && username && available === true && (
         <div className="form-actions" style={{ marginTop: "1.5rem" }}>
           {chainId !== CHAIN_ID ? (
-            <p className="status">Switch to Base Sepolia to pre-register.</p>
+            <p className="status">Switch to {NETWORK_DISPLAY_NAME} to pre-register.</p>
           ) : !preregValid ? (
             <button className="btn btn-primary" onClick={handlePreRegister} disabled={isPreRegPending}>
               {isPreRegPending ? "Pre-registering…" : "Pre-register (free)"}

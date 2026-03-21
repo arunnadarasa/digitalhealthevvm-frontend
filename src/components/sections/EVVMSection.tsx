@@ -3,13 +3,19 @@ import { useAccount, useReadContract } from "wagmi";
 import { useEvmSendTransaction } from "../../hooks/useEvmSendTransaction";
 import { useSignMessage } from "wagmi";
 import { formatUnits, parseUnits, encodeFunctionData } from "viem";
-import { ADDRESSES, DHM_TOKEN, CHAIN_ID, EVVM_ID } from "../../config/contracts";
+import {
+  ADDRESSES,
+  DHM_TOKEN,
+  CHAIN_ID,
+  EVVM_ID,
+  TOKEN_SYMBOL,
+  NETWORK_DISPLAY_NAME,
+} from "../../config/contracts";
 import { evvmAbi } from "../../abis";
 import { buildEvvmPayMessageCoreDoc } from "../../lib/evvmSign";
 import { addActivity } from "../../lib/activityLog";
 
 const FAUCET_AMOUNT = parseUnits("1000", 18);
-const TOKEN_SYMBOL = "DHM";
 
 export function EVVMSection() {
   const { address, chainId } = useAccount();
@@ -68,7 +74,7 @@ export function EVVMSection() {
       setFaucetStatus(`Done! You received 1000 ${TOKEN_SYMBOL}.`);
       addActivity({
         kind: "dhm_faucet",
-        title: "Received DHM from faucet",
+        title: `Received ${TOKEN_SYMBOL} from faucet`,
         description: `1000 ${TOKEN_SYMBOL} to ${address.slice(0, 6)}…${address.slice(-4)}`,
         txHash: txHash as string,
       });
@@ -162,12 +168,15 @@ export function EVVMSection() {
   return (
     <section className="section">
       <h2>EVVM Core</h2>
-      <p>View your Digital Health MATE (DHM) balance and EVVM metadata on Base Sepolia.</p>
+      <p>
+        View your principal token balance ({TOKEN_SYMBOL}) and EVVM metadata on {NETWORK_DISPLAY_NAME}. On-chain name is
+        shown below when available (deploy metadata may use &quot;Mate Token&quot; / MATE on Tempo).
+      </p>
       {address && (
         <div className="grid-2">
           <div>
             <div className="form-row">
-              <label>DHM Balance</label>
+              <label>{TOKEN_SYMBOL} balance</label>
               <div>
                 {balance !== undefined && balance !== null ? formatUnits(balance as bigint, 18) : "—"} {TOKEN_SYMBOL}
               </div>
@@ -227,13 +236,13 @@ export function EVVMSection() {
 
       {address && (
         <div style={{ marginTop: "1.5rem" }}>
-          <h3>Transfer DHM</h3>
+          <h3>Transfer {TOKEN_SYMBOL}</h3>
           <div className="form-row">
             <label>Recipient Address</label>
             <input type="text" placeholder="0x..." value={recipient} onChange={(e) => setRecipient(e.target.value)} />
           </div>
           <div className="form-row">
-            <label>Amount (DHM)</label>
+            <label>Amount ({TOKEN_SYMBOL})</label>
             <input type="text" placeholder="100" value={amount} onChange={(e) => setAmount(e.target.value)} />
           </div>
           <div className="form-actions">
@@ -242,7 +251,11 @@ export function EVVMSection() {
               onClick={handleTransfer}
               disabled={isTransferPending || chainId !== CHAIN_ID || !recipient || !amount}
             >
-              {chainId !== CHAIN_ID ? "Switch to Base Sepolia first" : isTransferPending ? "Sending…" : `Send ${TOKEN_SYMBOL}`}
+              {chainId !== CHAIN_ID
+                ? `Switch to ${NETWORK_DISPLAY_NAME} first`
+                : isTransferPending
+                  ? "Sending…"
+                  : `Send ${TOKEN_SYMBOL}`}
             </button>
           </div>
           {transferStatus && <p className="status">{transferStatus}</p>}
